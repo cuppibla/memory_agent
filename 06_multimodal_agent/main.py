@@ -14,15 +14,13 @@ from google.adk.runners import Runner
 from google.adk.sessions import VertexAiSessionService
 from google.adk.memory import VertexAiMemoryBankService
 from google.genai import types
-from vertexai import types
-from vertexai.types import ManagedTopicEnum
-from vertexai.types import MemoryBankCustomizationConfigMemoryTopic as MemoryTopic
-from vertexai.types import (
-    MemoryBankCustomizationConfigMemoryTopicCustomMemoryTopic as CustomMemoryTopic,
-)
-from vertexai.types import (
-    MemoryBankCustomizationConfigMemoryTopicManagedMemoryTopic as ManagedMemoryTopic,
-)
+
+from vertexai import types as vertexai_types
+
+ManagedTopicEnum = vertexai_types.ManagedTopicEnum
+MemoryTopic = vertexai_types.MemoryBankCustomizationConfigMemoryTopic
+CustomMemoryTopic = vertexai_types.MemoryBankCustomizationConfigMemoryTopicCustomMemoryTopic
+ManagedMemoryTopic = vertexai_types.MemoryBankCustomizationConfigMemoryTopicManagedMemoryTopic
 
 from agent import root_agent
 
