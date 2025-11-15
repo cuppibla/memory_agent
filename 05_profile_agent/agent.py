@@ -1,13 +1,12 @@
-# REPLACE THE EXISTING IMPORTS
 from google.adk.agents import LlmAgent
-from .tools import save_tool, recall_tool, setup_user_db
+from tools import save_tool, recall_tool, setup_user_db
 
 # Setup the DB when the agent module is loaded
 setup_user_db()
 
 root_agent = LlmAgent(
     name="profile_planner",
-    model="gemini-1.5-flash",
+    model="gemini-2.5-flash",
     instruction="""
     You are a hyper-personalized Master Trip Planner.
     1. RECALL FIRST: Before planning, your first action MUST be to call `recall_user_preferences` to learn about the user.

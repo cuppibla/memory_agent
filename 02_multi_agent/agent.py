@@ -1,7 +1,14 @@
+import os
+from dotenv import load_dotenv
+from google.adk.agents import LlmAgent, SequentialAgent
+from google.adk.tools import google_search
+
+load_dotenv()
+
 # --- Agent Definitions for our Specialist Team (Refactored for Sequential Workflow) ---
 
 # Note the new `output_key` and the more specific instruction.
-foodie_agent = Agent(
+foodie_agent = LlmAgent(
     name="foodie_agent",
     model="gemini-2.5-flash",
     tools=[google_search],
@@ -14,7 +21,7 @@ foodie_agent = Agent(
 )
 
 # The `{destination}` placeholder is automatically filled by the ADK from the state.
-transportation_agent = Agent(
+transportation_agent = LlmAgent(
     name="transportation_agent",
     model="gemini-2.5-flash",
     tools=[google_search],

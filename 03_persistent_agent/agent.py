@@ -1,6 +1,8 @@
-# REPLACE THE EXISTING IMPORTS
+from dotenv import load_dotenv
 from google.adk.agents import LlmAgent
-from .tools import setup_user_db
+from tools import setup_user_db
+
+load_dotenv()
 
 # Setup the DB when the agent module is loaded
 setup_user_db()

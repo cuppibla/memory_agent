@@ -1,7 +1,21 @@
-# --- A Helper Function to Run Our Agents ---
-# We'll use this function throughout the notebook to make running queries easy.
+import asyncio
+import sys
+import os
 
-async def run_agent_query(agent: Agent, query: str, session: Session, user_id: str, is_router: bool = False):
+# Add the current directory to sys.path to ensure we can import agent.py
+# This handles cases where the script is run from the parent directory
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
+from google.adk.agents import Agent
+from google.genai import types
+from google.adk.runners import Runner
+from google.adk.sessions import Session, InMemorySessionService
+from agent import root_agent as multi_day_agent
+
+# --- A Helper Function to Run Our Agents ---
+async def run_agent_query(agent: Agent, query: str, session: Session, user_id: str, session_service: InMemorySessionService, is_router: bool = False):
     """Initializes a runner and executes a query for a given agent and session."""
     print(f"\n🚀 Running query for agent: '{agent.name}' in session: '{session.id}'...")
 
@@ -16,55 +30,94 @@ async def run_agent_query(agent: Agent, query: str, session: Session, user_id: s
         async for event in runner.run_async(
             user_id=user_id,
             session_id=session.id,
-            new_message=Content(parts=[Part(text=query)], role="user")
+            new_message=types.Content(parts=[types.Part(text=query)], role="user")
         ):
             if not is_router:
                 # Let's see what the agent is thinking!
-                print(f"EVENT: {event}")
+                # print(f"EVENT: {event}")
+                pass
             if event.is_final_response():
                 final_response = event.content.parts[0].text
     except Exception as e:
         final_response = f"An error occurred: {e}"
 
     if not is_router:
-     print("\n" + "-"*50)
-     print("✅ Final Response:")
-     display(Markdown(final_response))
-     print("-"*50 + "\n")
+        print("\n" + "-"*50)
+        print("✅ Final Response:")
+        print(final_response)
+        print("-"*50 + "\n")
 
     return final_response
 
-# --- Initialize our Session Service ---
-# This one service will manage all the different sessions in our notebook.
-session_service = InMemorySessionService()
-my_user_id = "adk_adventurer_001"
-
-# --- Scenario 2: Testing Adaptation and Memory ---
-
-async def run_adaptive_memory_demonstration():
-    print("### 🧠 DEMO 2: AGENT THAT ADAPTS (SAME SESSION) ###")
+# --- Scenario 1: Lisbon Trip (Original) ---
+async def run_lisbon_trip_scenario(session_service: InMemorySessionService, user_id: str):
+    print("### 🧠 SCENARIO 1: LISBON TRIP (Adaptive Memory) ###")
 
     # Create ONE session that we will reuse for the whole conversation
     trip_session = await session_service.create_session(
         app_name=multi_day_agent.name,
-        user_id=my_user_id
+        user_id=user_id
     )
     print(f"Created a single session for our trip: {trip_session.id}")
 
     # --- Turn 1: The user initiates the trip ---
     query1 = "Hi! I want to plan a 2-day trip to Lisbon, Portugal. I'm interested in historic sites and great local food."
     print(f"\n🗣️ User (Turn 1): '{query1}'")
-    await run_agent_query(multi_day_agent, query1, trip_session, my_user_id)
+    await run_agent_query(multi_day_agent, query1, trip_session, user_id, session_service)
 
     # --- Turn 2: The user gives FEEDBACK and asks for a CHANGE ---
     # We use the EXACT SAME `trip_session` object!
     query2 = "That sounds pretty good, but I'm not a huge fan of castles. Can you replace the morning activity for Day 1 with something else historical?"
     print(f"\n🗣️ User (Turn 2 - Feedback): '{query2}'")
-    await run_agent_query(multi_day_agent, query2, trip_session, my_user_id)
+    await run_agent_query(multi_day_agent, query2, trip_session, user_id, session_service)
 
     # --- Turn 3: The user confirms and asks to continue ---
     query3 = "Yes, the new plan for Day 1 is perfect! Please plan Day 2 now, keeping the food theme in mind."
     print(f"\n🗣️ User (Turn 3 - Confirmation): '{query3}'")
-    await run_agent_query(multi_day_agent, query3, trip_session, my_user_id)
+    await run_agent_query(multi_day_agent, query3, trip_session, user_id, session_service)
 
-await run_adaptive_memory_demonstration()
+# --- Scenario 2: Tokyo Trip (New Destination) ---
+async def run_tokyo_trip_scenario(session_service: InMemorySessionService, user_id: str):
+    print("\n\n### 🗼 SCENARIO 2: TOKYO TRIP (New Destination) ###")
+
+    # Create a NEW session for a different trip
+    tokyo_session = await session_service.create_session(
+        app_name=multi_day_agent.name,
+        user_id=user_id
+    )
+    print(f"Created a new session for Tokyo trip: {tokyo_session.id}")
+
+    query1 = "I want to go to Tokyo for 3 days. I love anime and technology."
+    print(f"\n🗣️ User (Turn 1): '{query1}'")
+    await run_agent_query(multi_day_agent, query1, tokyo_session, user_id, session_service)
+
+    query2 = "For Day 2, can we focus on traditional culture instead?"
+    print(f"\n🗣️ User (Turn 2): '{query2}'")
+    await run_agent_query(multi_day_agent, query2, tokyo_session, user_id, session_service)
+
+# --- Scenario 3: Short Trip (1 Day) ---
+async def run_short_trip_scenario(session_service: InMemorySessionService, user_id: str):
+    print("\n\n### ⏱️ SCENARIO 3: SHORT TRIP (1 Day in New York) ###")
+
+    ny_session = await session_service.create_session(
+        app_name=multi_day_agent.name,
+        user_id=user_id
+    )
+    print(f"Created a new session for NY trip: {ny_session.id}")
+
+    query1 = "Plan a 1-day trip to New York City. Must see Times Square."
+    print(f"\n🗣️ User (Turn 1): '{query1}'")
+    await run_agent_query(multi_day_agent, query1, ny_session, user_id, session_service)
+
+async def main():
+    # --- Initialize our Session Service ---
+    # This one service will manage all the different sessions.
+    session_service = InMemorySessionService()
+    my_user_id = "adk_adventurer_001"
+
+    await run_lisbon_trip_scenario(session_service, my_user_id)
+    await run_tokyo_trip_scenario(session_service, my_user_id)
+    await run_short_trip_scenario(session_service, my_user_id)
+
+if __name__ == "__main__":
+    asyncio.run(main())
