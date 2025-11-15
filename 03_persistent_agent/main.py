@@ -58,26 +58,109 @@ async def run_agent_query(agent: Agent, query: str, session: Session, user_id: s
 async def main():
     session_service = DatabaseSessionService(db_url=SESSION_URL)
     
-    session_id = "my_persistent_trip" # A fixed ID for our trip
+    # --- Test Case 1: New Session ---
+    print("\n" + "="*50)
+    print("TEST CASE 1: New Session (Setting Context)")
+    print("="*50)
     
-    # Try to get existing session or create new one
+    session_id = "my_persistent_trip" 
+    
+    # Ensure we start fresh for this test by creating a new session if needed, 
+    # or just using the existing one but acknowledging we are 'starting' a flow.
+    # In a real app, you might generate a random UUID for a truly new session.
+    
+    # Get or create session
     session = await session_service.get_session(
         app_name=root_agent.name, user_id="user_01", session_id=session_id
     )
-    
-    if session:
-        print(f"Agent: Welcome back! Resuming our trip planning session ({session_id}).")
-    else:
-        print(f"Agent: Hello! Let's start planning a new trip ({session_id}). Where to?")
+    if not session:
         session = await session_service.create_session(
             app_name=root_agent.name, user_id="user_01", session_id=session_id
         )
+        print(f"Created new session: {session_id}")
+    else:
+        print(f"Resumed existing session: {session_id}")
+
+    # Turn 1: Tell the agent something about ourselves
+    query_1 = "Hi! I'm planning a trip to Tokyo. I love ramen and I'm a vegetarian."
+    await run_agent_query(root_agent, query_1, session, "user_01", session_service)
+
+    # --- Test Case 2: Resume Session ---
+    print("\n" + "="*50)
+    print("TEST CASE 2: Resume Session (Verifying Memory)")
+    print("="*50)
     
-    print(f"--- Persistent Trip Planner ---")
+    # Simulate a break in conversation or a new request coming in later
+    # We re-fetch the session to prove persistence works (though in this script it's the same object, 
+    # the service abstraction handles the DB sync).
     
-    # Example interaction
-    query = "I want to go to Paris."
-    await run_agent_query(root_agent, query, session, "user_01", session_service)
+    session_resumed = await session_service.get_session(
+        app_name=root_agent.name, user_id="user_01", session_id=session_id
+    )
+    
+    # Turn 2: Ask for a recommendation that requires remembering Turn 1
+    query_2 = "Where should I go for dinner?"
+    await run_agent_query(root_agent, query_2, session_resumed, "user_01", session_service)
+
+    # --- Test Case 3: Cross-Session Retrieval ---
+    print("\n" + "="*50)
+    print("TEST CASE 3: Cross-Session Retrieval (Manual Context Injection)")
+    print("="*50)
+    
+    # Scenario: User starts a completely NEW trip (new session ID) but wants to reference 
+    # preferences from the previous trip ("my_persistent_trip").
+    
+    new_session_id = "my_second_trip"
+    print(f"Starting NEW session: {new_session_id}")
+    
+    # 1. Retrieve the OLD session to get its history
+    old_session = await session_service.get_session(
+        app_name=root_agent.name, user_id="user_01", session_id=session_id
+    )
+    
+    # 2. Extract relevant info (naive approach: get all user/model turns)
+    # In a real app, you might use an LLM to summarize this, or filter for specific 'preferences'.
+    previous_context = ""
+    if old_session and old_session.events:
+        print(f"Found {len(old_session.events)} events in old session.")
+        previous_context = "PREVIOUS TRIP CONTEXT:\n"
+        for event in old_session.events:
+            # Assuming event structure has 'role' and 'parts' (standard GenAI types)
+            # We need to be careful with the structure. Let's just dump the text.
+            # The 'event' in session.events is likely a Turn or similar object.
+            # Let's inspect it or just try to access standard attributes.
+            # Based on standard ADK, it might be a Pydantic model with 'role' and 'parts'.
+            # Let's try to stringify it safely.
+            try:
+                role = getattr(event, 'role', 'unknown')
+                text = ""
+                if hasattr(event, 'parts'):
+                    text = " ".join([p.text for p in event.parts if hasattr(p, 'text')])
+                elif hasattr(event, 'content') and hasattr(event.content, 'parts'):
+                     text = " ".join([p.text for p in event.content.parts if hasattr(p, 'text')])
+                
+                if text:
+                    previous_context += f"- {role}: {text}\n"
+            except Exception as e:
+                print(f"Error parsing event: {e}")
+
+    print(f"Extracted Context:\n{previous_context}")
+
+    # 3. Create the NEW session
+    new_session = await session_service.create_session(
+        app_name=root_agent.name, user_id="user_01", session_id=new_session_id
+    )
+    
+    # 4. Inject the context into the FIRST query of the new session
+    # We explicitly tell the agent: "Here is what we know from a past trip..."
+    query_3 = f"""
+    {previous_context}
+    
+    I'm planning a new trip to Osaka this time. 
+    Based on my previous preferences (above), what should I eat?
+    """
+    
+    await run_agent_query(root_agent, query_3, new_session, "user_01", session_service)
 
 if __name__ == "__main__":
     asyncio.run(main())

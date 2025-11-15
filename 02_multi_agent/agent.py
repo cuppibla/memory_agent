@@ -34,7 +34,7 @@ transportation_agent = LlmAgent(
 )
 
 # This agent will run foodie_agent, then transportation_agent, in that exact order.
-find_and_navigate_agent = SequentialAgent(
+root_agent = SequentialAgent(
     name="find_and_navigate_agent",
     sub_agents=[foodie_agent, transportation_agent],
     description="A workflow that first finds a location and then provides directions to it."
