@@ -27,3 +27,9 @@ root_agent = LlmAgent(
     """,
     tools=[PreloadMemoryTool(), budget_tool],
 )
+
+from google.adk.apps.app import App
+app = App(
+    name="multimodal_agent",
+    root_agent=root_agent
+)

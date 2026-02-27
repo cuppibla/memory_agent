@@ -4,7 +4,6 @@ from typing import Dict, Any
 from google.adk.tools import ToolContext, FunctionTool
 
 USER_DB_FILE = "user_preferences.db"
-# ... (code for setup_user_db, save_user_preferences, recall_user_preferences from previous answer) ...
 
 def setup_user_db():
     with sqlite3.connect(USER_DB_FILE) as conn:

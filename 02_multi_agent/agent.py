@@ -39,3 +39,9 @@ root_agent = SequentialAgent(
     sub_agents=[foodie_agent, transportation_agent],
     description="A workflow that first finds a location and then provides directions to it."
 )
+
+from google.adk.apps.app import App
+app = App(
+    name="multi_agent",
+    root_agent=root_agent
+)

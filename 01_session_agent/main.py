@@ -49,9 +49,9 @@ async def run_agent_query(agent: Agent, query: str, session: Session, user_id: s
 
     return final_response
 
-# --- Scenario 1: Lisbon Trip (Original) ---
-async def run_lisbon_trip_scenario(session_service: InMemorySessionService, user_id: str):
-    print("### 🧠 SCENARIO 1: LISBON TRIP (Adaptive Memory) ###")
+# --- Scenario 1: Tokyo Trip (Original) ---
+async def run_trip_same_session_scenario(session_service: InMemorySessionService, user_id: str):
+    print("### 🧠 SCENARIO 1: TOKYO TRIP (Adaptive Memory) ###")
 
     # Create ONE session that we will reuse for the whole conversation
     trip_session = await session_service.create_session(
@@ -61,23 +61,18 @@ async def run_lisbon_trip_scenario(session_service: InMemorySessionService, user
     print(f"Created a single session for our trip: {trip_session.id}")
 
     # --- Turn 1: The user initiates the trip ---
-    query1 = "Hi! I want to plan a 2-day trip to Lisbon, Portugal. I'm interested in historic sites and great local food."
+    query1 = "Hi! I want to plan a 2-day trip to Tokyo. I'm interested in historic sites and sushi."
     print(f"\n🗣️ User (Turn 1): '{query1}'")
     await run_agent_query(multi_day_agent, query1, trip_session, user_id, session_service)
 
     # --- Turn 2: The user gives FEEDBACK and asks for a CHANGE ---
     # We use the EXACT SAME `trip_session` object!
-    query2 = "That sounds pretty good, but I'm not a huge fan of castles. Can you replace the morning activity for Day 1 with something else historical?"
+    query2 = "That sounds pretty good, do you remember what I liked about the food?"
     print(f"\n🗣️ User (Turn 2 - Feedback): '{query2}'")
     await run_agent_query(multi_day_agent, query2, trip_session, user_id, session_service)
 
-    # --- Turn 3: The user confirms and asks to continue ---
-    query3 = "Yes, the new plan for Day 1 is perfect! Please plan Day 2 now, keeping the food theme in mind."
-    print(f"\n🗣️ User (Turn 3 - Confirmation): '{query3}'")
-    await run_agent_query(multi_day_agent, query3, trip_session, user_id, session_service)
-
 # --- Scenario 2: Tokyo Trip (New Destination) ---
-async def run_tokyo_trip_scenario(session_service: InMemorySessionService, user_id: str):
+async def run_trip_different_session_scenario(session_service: InMemorySessionService, user_id: str):
     print("\n\n### 🗼 SCENARIO 2: TOKYO TRIP (New Destination) ###")
 
     # Create a NEW session for a different trip
@@ -87,27 +82,17 @@ async def run_tokyo_trip_scenario(session_service: InMemorySessionService, user_
     )
     print(f"Created a new session for Tokyo trip: {tokyo_session.id}")
 
-    query1 = "I want to go to Tokyo for 3 days. I love anime and technology."
+    query1 = "Hi! I want to plan a 2-day trip to Tokyo. I'm interested in historic sites and sushi."
     print(f"\n🗣️ User (Turn 1): '{query1}'")
     await run_agent_query(multi_day_agent, query1, tokyo_session, user_id, session_service)
 
-    query2 = "For Day 2, can we focus on traditional culture instead?"
-    print(f"\n🗣️ User (Turn 2): '{query2}'")
-    await run_agent_query(multi_day_agent, query2, tokyo_session, user_id, session_service)
-
-# --- Scenario 3: Short Trip (1 Day) ---
-async def run_short_trip_scenario(session_service: InMemorySessionService, user_id: str):
-    print("\n\n### ⏱️ SCENARIO 3: SHORT TRIP (1 Day in New York) ###")
-
-    ny_session = await session_service.create_session(
+    tokyo_session_2 = await session_service.create_session(
         app_name=multi_day_agent.name,
         user_id=user_id
     )
-    print(f"Created a new session for NY trip: {ny_session.id}")
-
-    query1 = "Plan a 1-day trip to New York City. Must see Times Square."
-    print(f"\n🗣️ User (Turn 1): '{query1}'")
-    await run_agent_query(multi_day_agent, query1, ny_session, user_id, session_service)
+    query2 = "That sounds pretty good, do you remember what I liked about the food?"
+    print(f"\n🗣️ User (Turn 2): '{query2}'")
+    await run_agent_query(multi_day_agent, query2, tokyo_session_2, user_id, session_service)
 
 async def main():
     # --- Initialize our Session Service ---
@@ -115,9 +100,8 @@ async def main():
     session_service = InMemorySessionService()
     my_user_id = "adk_adventurer_001"
 
-    await run_lisbon_trip_scenario(session_service, my_user_id)
-    await run_tokyo_trip_scenario(session_service, my_user_id)
-    await run_short_trip_scenario(session_service, my_user_id)
+    await run_trip_same_session_scenario(session_service, my_user_id)
+    await run_trip_different_session_scenario(session_service, my_user_id)
 
 if __name__ == "__main__":
     asyncio.run(main())

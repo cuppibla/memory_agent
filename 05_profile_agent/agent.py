@@ -1,7 +1,10 @@
 from dotenv import load_dotenv
 from google.adk.agents import LlmAgent
-from .tools import setup_user_db, save_tool, recall_tool
-
+try:
+    from .tools import setup_user_db, save_tool, recall_tool
+except ImportError:
+    from tools import setup_user_db, save_tool, recall_tool
+    
 load_dotenv()
 
 # Setup the DB when the agent module is loaded
@@ -17,4 +20,10 @@ root_agent = LlmAgent(
     2. PERSONALIZE: Use any recalled preferences (like dietary needs) to tailor your suggestions.
     3. LEARN: If a user states a new, long-term preference, your final action MUST be to use `save_user_preferences` to remember it.
     """,
+)
+
+from google.adk.apps.app import App
+app = App(
+    name="profile_agent",
+    root_agent=root_agent
 )
