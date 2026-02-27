@@ -21,9 +21,3 @@ root_agent = LlmAgent(
     3. LEARN: If a user states a new, long-term preference, your final action MUST be to use `save_user_preferences` to remember it.
     """,
 )
-
-from google.adk.apps.app import App
-app = App(
-    name="profile_agent",
-    root_agent=root_agent
-)

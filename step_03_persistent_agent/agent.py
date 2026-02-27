@@ -23,9 +23,3 @@ root_agent = LlmAgent(
         """,
     tools=[google_search]
 )
-
-from google.adk.apps.app import App
-app = App(
-    name="persistent_agent",
-    root_agent=root_agent
-)

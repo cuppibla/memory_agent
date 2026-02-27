@@ -99,9 +99,3 @@ root_agent = LlmAgent(
     after_tool_callback=save_activity_type_callback,
 )
 print("🎩 The Master Planner is ready.")
-
-from google.adk.apps.app import App
-app = App(
-    name="stateful_agent",
-    root_agent=root_agent
-)

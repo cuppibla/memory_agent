@@ -29,9 +29,4 @@ root_agent = LlmAgent(
     tools=[google_search]
 )
 
-app = App(
-    name="session_agent",
-    root_agent=root_agent
-)
-
 print(f"🗺️ Agent '{root_agent.name}' is created and ready to plan and adapt!")
